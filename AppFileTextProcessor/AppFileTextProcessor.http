@@ -1,0 +1,6 @@
+@AppFileTextProcessor_HostAddress = http://localhost:5118
+
+GET {{AppFileTextProcessor_HostAddress}}
+Accept: application/json
+
+###
