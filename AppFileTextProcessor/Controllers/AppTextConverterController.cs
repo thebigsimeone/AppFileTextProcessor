@@ -29,8 +29,8 @@ namespace TextFileProcessor.Controllers
                     return BadRequest("I nomi dei file di input e output sono obbligatori.");
                 }
 
-                string inputFilePath = Path.Combine(BaseDirectory, inputFileName);
-                string outputFilePath = Path.Combine(BaseDirectory, outputFileName);
+                string inputFilePath = Path.Combine(BaseDirectory, inputFileName + ".txt");
+                string outputFilePath = Path.Combine(BaseDirectory, outputFileName + ".txt");
 
                 if (!System.IO.File.Exists(inputFilePath))
                 {
