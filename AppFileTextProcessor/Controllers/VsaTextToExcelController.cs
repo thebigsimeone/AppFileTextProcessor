@@ -7,34 +7,9 @@ namespace TextFileProcessor.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class MimTextToExcelController : ControllerBase
+    public class VsaTextToExcelController : ControllerBase
     {
-
-        /*        [HttpPost("process")]
-        public IActionResult ProcessLocalFile([FromQuery] string inputFilePath, [FromQuery] string outputFilePath)
-        {
-            if (string.IsNullOrWhiteSpace(inputFilePath) || string.IsNullOrWhiteSpace(outputFilePath))
-            {
-                return BadRequest("I percorsi dei file di input e output sono obbligatori.");
-            }
-
-            if (!System.IO.File.Exists(inputFilePath))
-            {
-                return BadRequest("File di input non trovato.");
-            }
-
-            string content;
-            using (var reader = new StreamReader(inputFilePath, Encoding.UTF8))
-            {
-                content = reader.ReadToEnd();
-            }
-
-            var processedData = ProcessContent(content);
-            SaveToExcel(processedData, outputFilePath);
-
-            return Ok("File elaborato e salvato correttamente.");
-        }*/
-        private const string BaseDirectory = @"C:\Users\Utente\Desktop\MIM\";
+        private const string BaseDirectory = @"C:\Users\Utente\Desktop\VSA\";
 
         [HttpPost("process")]
         public IActionResult ProcessLocalFile([FromQuery] string inputFileName, [FromQuery] string outputFileName)
