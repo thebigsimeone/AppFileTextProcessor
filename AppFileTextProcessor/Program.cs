@@ -18,7 +18,7 @@ if (app.Environment.IsDevelopment())
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "TextFileProcessor API V1");
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "TextFileProcessor API V2");
     c.RoutePrefix = string.Empty; // Set Swagger UI at the app's root
 });
 
