@@ -53,8 +53,8 @@ namespace TextFileProcessor.Controllers
             {
                 string trimmedLine = line.Trim();
 
-                // Riconoscere la riga contenente il Protocollo
-                if (Regex.IsMatch(trimmedLine, @"^2024\d{7}\s[A-Z0-9]{11,16}$"))
+                // Riconoscere la riga contenente il Protocollo e l'Identificativo (Codice Fiscale o P.IVA)
+                if (Regex.IsMatch(trimmedLine, @"^2024\d{7}\s'?\d{11}$"))
                 {
                     if (newRecord)
                     {
@@ -63,7 +63,7 @@ namespace TextFileProcessor.Controllers
                     }
 
                     protocollo = trimmedLine.Substring(0, 11);
-                    identificativo = trimmedLine.Substring(12);
+                    identificativo = trimmedLine.Substring(12).Replace("'", ""); // Rimuove eventuali apici dal codice fiscale o P.IVA
                     newRecord = true;
                 }
                 else
@@ -112,4 +112,3 @@ namespace TextFileProcessor.Controllers
         }
     }
 }
-
