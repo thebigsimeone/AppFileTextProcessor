@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using OfficeOpenXml;
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace AppFileTextProcessor.Controllers
@@ -33,42 +34,65 @@ namespace AppFileTextProcessor.Controllers
                 int totalColumns1 = sheet1.Dimension.Columns;
                 int totalRows2 = sheet2.Dimension.Rows;
 
-                // Combine the rows from both sheets
-                for (int row = 1; row <= totalRows1; row++)
+                // Copia l'intestazione dal primo file Excel (riga 1)
+                for (int col = 1; col <= totalColumns1; col++)
+                {
+                    outputSheet.Cells[1, col].Value = sheet1.Cells[1, col].Value;
+                }
+
+                // Unisci tutte le righe da entrambi i fogli (saltando l'intestazione)
+                int currentRow = 2;
+                for (int row = 2; row <= totalRows1; row++, currentRow++)
                 {
                     for (int col = 1; col <= totalColumns1; col++)
                     {
-                        outputSheet.Cells[row, col].Value = sheet1.Cells[row, col].Value;
+                        outputSheet.Cells[currentRow, col].Value = sheet1.Cells[row, col].Value;
                     }
                 }
 
-                for (int row = 1; row <= totalRows2; row++)
+                for (int row = 2; row <= totalRows2; row++, currentRow++)
                 {
                     for (int col = 1; col <= totalColumns1; col++)
                     {
-                        outputSheet.Cells[totalRows1 + row, col].Value = sheet2.Cells[row, col].Value;
+                        outputSheet.Cells[currentRow, col].Value = sheet2.Cells[row, col].Value;
                     }
                 }
 
-                int totalRowsCombined = totalRows1 + totalRows2;
-
-                // Shuffle the combined rows, excluding the header
+                // Ora mescola solo le righe (escludendo l'intestazione)
+                var totalRowsCombined = currentRow - 1;
+                var rows = Enumerable.Range(2, totalRowsCombined - 1).ToList();  // Prende tutte le righe tranne l'intestazione
                 Random rand = new Random();
-                var rows = Enumerable.Range(2, totalRowsCombined - 1).OrderBy(x => rand.Next()).ToList();
-                for (int i = 0; i < rows.Count; i++)
+                rows = rows.OrderBy(x => rand.Next()).ToList();  // Mescola le righe
+
+                // Crea un foglio temporaneo per tenere le righe mescolate
+                var shuffledSheet = outputPackage.Workbook.Worksheets.Add("ShuffledSheet");
+
+                // Copia l'intestazione nel foglio mescolato
+                for (int col = 1; col <= totalColumns1; col++)
+                {
+                    shuffledSheet.Cells[1, col].Value = outputSheet.Cells[1, col].Value;
+                }
+
+                // Copia le righe mescolate nel nuovo foglio, mantenendo le celle intatte
+                int newRow = 2;
+                foreach (var row in rows)
                 {
                     for (int col = 1; col <= totalColumns1; col++)
                     {
-                        outputSheet.Cells[i + 2, col].Value = outputSheet.Cells[rows[i], col].Value;
+                        shuffledSheet.Cells[newRow, col].Value = outputSheet.Cells[row, col].Value;
                     }
+                    newRow++;
                 }
 
-                // Save the output file to a memory stream
+                // Rimuovi il vecchio foglio non mescolato
+                outputPackage.Workbook.Worksheets.Delete("CombinedSheet");
+
+                // Salva il file di output in un MemoryStream
                 var stream = new MemoryStream();
                 outputPackage.SaveAs(stream);
                 stream.Position = 0;
 
-                var fileName = "Combined_Utenze_telefoniche.xlsx";
+                var fileName = "Combined_Utenze_telefoniche_Shuffled.xlsx";
                 return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
             }
         }
