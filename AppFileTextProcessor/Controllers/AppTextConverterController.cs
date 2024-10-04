@@ -37,9 +37,6 @@ namespace TextFileProcessor.Controllers
                     return BadRequest("File di input non trovato.");
                 }
 
-                Console.WriteLine($"Input File Path: {inputFilePath}");
-                Console.WriteLine($"Output File Path: {outputFilePath}");
-
                 string content;
                 using (var reader = new StreamReader(inputFilePath, Encoding.UTF8))
                 {
@@ -53,9 +50,7 @@ namespace TextFileProcessor.Controllers
             }
             catch (Exception ex)
             {
-                // Log l'errore per diagnosi
                 Console.WriteLine($"Errore: {ex.Message}");
-                Console.WriteLine($"StackTrace: {ex.StackTrace}");
                 return StatusCode(500, $"Errore interno del server: {ex.Message}");
             }
         }
@@ -65,7 +60,12 @@ namespace TextFileProcessor.Controllers
             var lines = content.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
             var processedLines = new List<string>();
 
-            // Aggiungi l'intestazione iniziale
+            // Rimuovi eventuali caratteri speciali non visibili
+            for (int i = 0; i < lines.Length; i++)
+            {
+                lines[i] = Regex.Replace(lines[i], @"[^\x20-\x7E]", " ");
+            }
+
             processedLines.Add("Dai controlli effettuati in capo al relazionato sono stati rilevati i seguenti negozi");
             processedLines.Add("giuridici:");
             processedLines.Add("-");
@@ -76,38 +76,40 @@ namespace TextFileProcessor.Controllers
             foreach (var line in lines)
             {
                 string trimmedLine = line.Trim();
+                trimmedLine = Regex.Replace(trimmedLine, @"\s+", " "); // Rimuove spazi multipli, mantenendo solo uno spazio tra parole
                 var partitaiva = @"^\d{11}$";
                 var codicefiscale = @"^[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]$";
 
                 // Riconoscere e processare la riga contenente l'anno
-                if (Regex.IsMatch(trimmedLine, @"^\d{4}(\s+Modello\s+.+)?$"))
+                if (Regex.IsMatch(trimmedLine, @"^\d{4}\b"))
                 {
-                    // Gestisci l'inizio di un nuovo anno
                     if (!newSection)
                     {
                         processedLines.Add("-");
                         processedLines.Add("-");
                     }
-                    processedLines.Add("ANNO " + trimmedLine.Split('\t')[0]);
+
+                    string anno = trimmedLine.Split('\t')[0];
+                    processedLines.Add($"ANNO {anno}");
                     processedLines.Add("-");
-                    processedLines.Add("-");
+
                     newSection = true;
+                    continue;
                 }
-                else if (trimmedLine.StartsWith("Modello") || trimmedLine.StartsWith("Serie") || trimmedLine.StartsWith("Codice identificativo contratto") || trimmedLine.StartsWith("Protocollo Telematico"))
+                else if (Regex.IsMatch(trimmedLine, @"^Modello|Serie|Codice identificativo contratto|Protocollo Telematico"))
                 {
-                    // Rimuovi le righe "Modello", "Serie", "Codice identificativo contratto" e "Protocollo Telematico"
+                    // Salta le righe con "Modello", "Serie", "Codice identificativo contratto" e "Protocollo Telematico"
                     continue;
                 }
                 else if (trimmedLine.StartsWith("Ufficio"))
                 {
-                    // Processa la riga "Ufficio"
                     string cityPart = ExtractCityPart(trimmedLine);
                     string datePart = trimmedLine.Split(new[] { "data registrazione" }, StringSplitOptions.None)[1].Trim();
+                    processedLines.Add("-"); // Aggiungere trattino
                     processedLines.Add("--Ufficio " + cityPart + " data registrazione " + datePart);
                 }
                 else if (trimmedLine.StartsWith("Negozio"))
                 {
-                    // Processa la riga "Negozio"
                     trimmedLine = Regex.Replace(trimmedLine, @"\s*\([^)]*\)", string.Empty);
                     processedLines.Add(trimmedLine);
                 }
@@ -138,10 +140,8 @@ namespace TextFileProcessor.Controllers
 
             processedLines.Add("-");
             processedLines.Add("-");
-            // Aggiungi la riga finale
             processedLines.Add("Dai controlli effettuati non sono stati rilevati ulteriori negozi giuridici");
 
-            // Unisci di nuovo le linee processate
             content = string.Join("\n", processedLines);
 
             return content;
