@@ -45,7 +45,7 @@ namespace TextFileProcessor.Controllers
             var processedData = new List<Dictionary<string, string>>();
 
             Dictionary<string, string> currentRecord = null;
-            string currentField = null;
+            StringBuilder esitoBuilder = null;
 
             foreach (var line in lines)
             {
@@ -53,8 +53,9 @@ namespace TextFileProcessor.Controllers
 
                 if (Regex.IsMatch(trimmedLine, @"^2024\d{7}"))
                 {
-                    if (currentRecord != null)
+                    if (currentRecord != null && esitoBuilder != null)
                     {
+                        currentRecord["Esito"] = esitoBuilder.ToString().Trim();
                         processedData.Add(currentRecord);
                     }
 
@@ -63,26 +64,17 @@ namespace TextFileProcessor.Controllers
                         { "Protocollo", trimmedLine.Substring(0, 11) },
                         { "Identificativo", trimmedLine.Substring(12).Replace("'", "") }
                     };
-                    currentField = "Esito";
+                    esitoBuilder = new StringBuilder();
                 }
-                else if (currentRecord != null)
+                else if (currentRecord != null && esitoBuilder != null)
                 {
-                    if (currentField == "Esito")
-                    {
-                        if (currentRecord.ContainsKey(currentField))
-                        {
-                            currentRecord[currentField] += " " + trimmedLine;
-                        }
-                        else
-                        {
-                            currentRecord[currentField] = trimmedLine;
-                        }
-                    }
+                    esitoBuilder.AppendLine(trimmedLine);
                 }
             }
 
-            if (currentRecord != null)
+            if (currentRecord != null && esitoBuilder != null)
             {
+                currentRecord["Esito"] = esitoBuilder.ToString().Trim();
                 processedData.Add(currentRecord);
             }
 
