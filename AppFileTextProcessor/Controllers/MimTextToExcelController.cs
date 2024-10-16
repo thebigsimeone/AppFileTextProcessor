@@ -35,16 +35,17 @@ namespace TextFileProcessor.Controllers
             return Ok("File elaborato e salvato correttamente.");
         }*/
         private const string BaseDirectory = @"C:\Users\Utente\Desktop\MIM\";
+        private const string DefaultInputFileName = "MIM_INIZIALE.txt";
 
         [HttpPost("process")]
-        public IActionResult ProcessLocalFile([FromQuery] string inputFileName, [FromQuery] string outputFileName)
+        public IActionResult ProcessLocalFile([FromQuery] string outputFileName)
         {
-            if (string.IsNullOrWhiteSpace(inputFileName) || string.IsNullOrWhiteSpace(outputFileName))
+            if (string.IsNullOrWhiteSpace(outputFileName))
             {
-                return BadRequest("I nomi dei file di input e output sono obbligatori.");
+                return BadRequest("I nomi dei file di output sono obbligatori.");
             }
 
-            string inputFilePath = Path.Combine(BaseDirectory, inputFileName + ".txt");
+            string inputFilePath = Path.Combine(BaseDirectory, DefaultInputFileName);
             string outputFilePath = Path.Combine(BaseDirectory, outputFileName + ".xls");
 
             if (!System.IO.File.Exists(inputFilePath))
