@@ -9,31 +9,6 @@ namespace TextFileProcessor.Controllers
     [Route("api/[controller]")]
     public class MimTextToExcelController : ControllerBase
     {
-
-        /*        [HttpPost("process")]
-        public IActionResult ProcessLocalFile([FromQuery] string inputFilePath, [FromQuery] string outputFilePath)
-        {
-            if (string.IsNullOrWhiteSpace(inputFilePath) || string.IsNullOrWhiteSpace(outputFilePath))
-            {
-                return BadRequest("I percorsi dei file di input e output sono obbligatori.");
-            }
-
-            if (!System.IO.File.Exists(inputFilePath))
-            {
-                return BadRequest("File di input non trovato.");
-            }
-
-            string content;
-            using (var reader = new StreamReader(inputFilePath, Encoding.UTF8))
-            {
-                content = reader.ReadToEnd();
-            }
-
-            var processedData = ProcessContent(content);
-            SaveToExcel(processedData, outputFilePath);
-
-            return Ok("File elaborato e salvato correttamente.");
-        }*/
         private const string BaseDirectory = @"C:\Users\Utente\Desktop\MIM\";
         private const string DefaultInputFileName = "MIM_INIZIALE.txt";
 
@@ -46,7 +21,7 @@ namespace TextFileProcessor.Controllers
             }
 
             string inputFilePath = Path.Combine(BaseDirectory, DefaultInputFileName);
-            string outputFilePath = Path.Combine(BaseDirectory, outputFileName + ".xls");
+            string outputFilePath = Path.Combine(BaseDirectory, outputFileName + ".xlsx");
 
             if (!System.IO.File.Exists(inputFilePath))
             {
@@ -54,7 +29,7 @@ namespace TextFileProcessor.Controllers
             }
 
             string content;
-            using (var reader = new StreamReader(inputFilePath, Encoding.UTF8))
+            using (var reader = new StreamReader(inputFilePath, Encoding.GetEncoding("ISO-8859-1")))
             {
                 content = reader.ReadToEnd();
             }
