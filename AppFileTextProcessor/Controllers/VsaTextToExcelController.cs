@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using AppFileTextProcessor.Interface;
+using Microsoft.AspNetCore.Mvc;
 using OfficeOpenXml;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -11,6 +12,12 @@ namespace TextFileProcessor.Controllers
     {
         private const string BaseDirectory = @"C:\Users\Utente\Desktop\VSA\";
         private const string DefaultInputFileName = "VSA_INIZIALE.txt";
+        private readonly ITextProcessingService _textProcessingService;
+
+        public VsaTextToExcelController(ITextProcessingService textProcessingService)
+        {
+            _textProcessingService = textProcessingService;
+        }
 
         [HttpPost("process")]
         public IActionResult ProcessLocalFile([FromQuery] string outputFileName)
@@ -21,7 +28,7 @@ namespace TextFileProcessor.Controllers
             }
 
             string inputFilePath = Path.Combine(BaseDirectory, DefaultInputFileName);
-            string outputFilePath = Path.Combine(BaseDirectory, outputFileName + ".xls");
+            string outputFilePath = Path.Combine(BaseDirectory, outputFileName + ".xlsx");
 
             if (!System.IO.File.Exists(inputFilePath))
             {
@@ -29,83 +36,39 @@ namespace TextFileProcessor.Controllers
             }
 
             string content;
-            using (var reader = new StreamReader(inputFilePath, Encoding.UTF8))
+            using (var reader = new StreamReader(inputFilePath, Encoding.GetEncoding("ISO-8859-1")))
             {
                 content = reader.ReadToEnd();
             }
 
-            var processedData = ProcessContent(content);
+            var processedData = _textProcessingService.ProcessContent(content);
             SaveToExcel(processedData, outputFilePath);
 
             return Ok("File elaborato e salvato correttamente.");
         }
 
-        private List<Dictionary<string, string>> ProcessContent(string content)
+        private void SaveToExcel(List<(string Protocollo, string Identificativo, string Esito)> data, string outputFilePath)
         {
-            var lines = content.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
-            var processedData = new List<Dictionary<string, string>>();
-
-            Dictionary<string, string> currentRecord = null;
-            StringBuilder esitoBuilder = null;
-
-            foreach (var line in lines)
-            {
-                string trimmedLine = line.Trim();
-
-                if (Regex.IsMatch(trimmedLine, @"^2024\d{7}"))
-                {
-                    if (currentRecord != null && esitoBuilder != null)
-                    {
-                        currentRecord["Esito"] = esitoBuilder.ToString().Trim();
-                        processedData.Add(currentRecord);
-                    }
-
-                    currentRecord = new Dictionary<string, string>
-                    {
-                        { "Protocollo", trimmedLine.Substring(0, 11) },
-                        { "Identificativo", trimmedLine.Substring(12).Replace("'", "") }
-                    };
-                    esitoBuilder = new StringBuilder();
-                }
-                else if (currentRecord != null && esitoBuilder != null)
-                {
-                    esitoBuilder.AppendLine(trimmedLine);
-                }
-            }
-
-            if (currentRecord != null && esitoBuilder != null)
-            {
-                currentRecord["Esito"] = esitoBuilder.ToString().Trim();
-                processedData.Add(currentRecord);
-            }
-
-            return processedData;
-        }
-
-        private void SaveToExcel(List<Dictionary<string, string>> data, string outputFilePath)
-        {
+            // Imposta il contesto della licenza di EPPlus
             ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
             using (var package = new ExcelPackage())
             {
                 var worksheet = package.Workbook.Worksheets.Add("Foglio1");
 
-                // Imposta le intestazioni delle colonne secondo il prototipo
                 worksheet.Cells[1, 1].Value = "Protocollo";
                 worksheet.Cells[1, 2].Value = "Identificativo";
-                worksheet.Cells[1, 3].Value = "Esito";
+                worksheet.Cells[1, 3].Value = "ESITO";
 
-                int row = 2;
-                foreach (var record in data)
+                for (int i = 0; i < data.Count; i++)
                 {
-                    worksheet.Cells[row, 1].Value = record["Protocollo"];
-                    worksheet.Cells[row, 2].Value = record["Identificativo"];
-                    worksheet.Cells[row, 3].Value = record.ContainsKey("Esito") ? record["Esito"] : string.Empty;
-
-                    row++;
+                    worksheet.Cells[i + 2, 1].Value = data[i].Protocollo;
+                    worksheet.Cells[i + 2, 2].Value = data[i].Identificativo;
+                    worksheet.Cells[i + 2, 3].Value = data[i].Esito;
                 }
 
-                worksheet.Cells[1, 1, row - 1, 3].Style.Numberformat.Format = "@";
+                // Imposta la formattazione delle celle come testo
+                worksheet.Cells[1, 1, data.Count + 1, 3].Style.Numberformat.Format = "@";
 
                 var fileInfo = new FileInfo(outputFilePath);
                 package.SaveAs(fileInfo);
