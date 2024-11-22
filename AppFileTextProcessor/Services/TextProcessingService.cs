@@ -18,7 +18,10 @@ namespace AppFileTextProcessor.Services
 
             foreach (var line in lines)
             {
-                string trimmedLine = line.Trim();
+                // Pulisce la linea dai caratteri invisibili e non stampabili, escludendo i caratteri con accenti
+                string cleanedLine = RimuoviCaratteriInvisibili(line);
+
+                string trimmedLine = cleanedLine.Trim();
 
                 // Riconoscere la riga contenente il Protocollo
                 if (Regex.IsMatch(trimmedLine, @"^2024\d{7}\s[A-Z0-9]{11,16}$"))
@@ -48,6 +51,13 @@ namespace AppFileTextProcessor.Services
             }
 
             return processedData;
+        }
+
+        // Funzione per rimuovere i caratteri invisibili e non stampabili
+        private string RimuoviCaratteriInvisibili(string input)
+        {
+            // Rimuove caratteri che non sono visibili, tranne gli accenti e i caratteri standard visibili
+            return Regex.Replace(input, @"[^\x20-\x7EÀ-ÿ]", " ");
         }
     }
 }

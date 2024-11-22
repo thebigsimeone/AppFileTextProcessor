@@ -57,7 +57,7 @@ namespace AppFileTextProcessor.Services
                         if (await reader.ReadAsync())
                         {
                             // Restituisci la denominazione eliminando eventuali spazi aggiuntivi
-                            return reader["PBADEN"].ToString().Trim();
+                            return reader["PBADEN"].ToString().Trim().ToUpper();
                         }
                     }
                 }
