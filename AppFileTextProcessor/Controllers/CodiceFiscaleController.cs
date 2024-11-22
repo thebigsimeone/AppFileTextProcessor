@@ -283,16 +283,13 @@ namespace AppFileTextProcessor.Controllers
         {
             var comuni = new Dictionary<string, string>();
 
-            // Leggi il file JSON
             var json = System.IO.File.ReadAllText(path);
 
-            // Parse del JSON come oggetto
             var jsonObject = JObject.Parse(json);
 
             // Accedi all'array contenuto nella proprietà "CODICI al 30-06-2024"
             var jsonArray = (JArray)jsonObject["CODICI al 30-06-2024"];
 
-            // Itera sull'array per popolare il dizionario dei comuni
             foreach (var item in jsonArray)
             {
                 string nomeComune = item["Denominazione in italiano"].ToString().ToUpper();
@@ -306,16 +303,13 @@ namespace AppFileTextProcessor.Controllers
         {
             var comuni = new Dictionary<string, string>();
 
-            // Leggi il file JSON
             var json = System.IO.File.ReadAllText(path);
 
-            // Parse del JSON come oggetto
             var jsonObject = JObject.Parse(json);
 
             // Accedi all'array contenuto nella proprietà "CODICI al 30-06-2024"
             var jsonArray = (JArray)jsonObject["NAZIONI"];
 
-            // Itera sull'array per popolare il dizionario dei comuni
             foreach (var item in jsonArray)
             {
                 string nomeComune = item["Nazione"].ToString().ToUpper();

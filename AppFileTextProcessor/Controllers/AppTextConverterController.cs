@@ -16,8 +16,11 @@ namespace TextFileProcessor.Controllers
             _textProcessingService = textProcessingService;
             _comuniService = comuniService;
 
-            // Carica i comuni dal file JSON all'avvio del controller
-            _comuniService.LoadComuniFromJson(@"C:\Users\Utente\Desktop\PublishedApp\AppFileTextProcessor\json\comuni.json");
+            // Carica i comuni dai file JSON all'avvio del controller
+            _comuniService.LoadComuniFromJson(
+                @"C:\Users\Utente\Desktop\PublishedApp\AppFileTextProcessor\json\comuni.json",
+                @"C:\Users\Utente\Desktop\PublishedApp\AppFileTextProcessor\json\Elenco-comuni-italiani.json"
+            );
         }
 
         private const string BaseDirectory = @"C:\Users\Utente\Desktop\APPALTO\";

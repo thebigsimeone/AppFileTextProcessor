@@ -2,8 +2,7 @@
 {
     public interface IComuniService
     {
-        HashSet<string> LoadComuniFromJson(string path);
+        void LoadComuniFromJson(string comuniPath, string elencoComuniPath);
         string ExtractCityPart(string line);
     }
-
 }
