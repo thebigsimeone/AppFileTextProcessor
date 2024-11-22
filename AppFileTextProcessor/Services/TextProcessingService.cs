@@ -18,13 +18,12 @@ namespace AppFileTextProcessor.Services
 
             foreach (var line in lines)
             {
-                // Pulisce la linea dai caratteri invisibili e non stampabili, escludendo i caratteri con accenti
-                string cleanedLine = RimuoviCaratteriInvisibili(line);
-
-                string trimmedLine = cleanedLine.Trim();
+                string cleanedLine = Regex.Replace(line, "[\t\x00-\x1F]+", " ").Trim();
+                cleanedLine = Regex.Replace(cleanedLine, "\\s+", " "); // Rimuove spazi multipli e tabulazioni
+                cleanedLine = NormalizeText(cleanedLine); // Normalizza il testo
 
                 // Riconoscere la riga contenente il Protocollo
-                if (Regex.IsMatch(trimmedLine, @"^2024\d{7}\s[A-Z0-9]{11,16}$"))
+                if (Regex.IsMatch(cleanedLine, @"^2024\d{7}\s[A-Z0-9]{11,16}$"))
                 {
                     if (newRecord)
                     {
@@ -32,15 +31,15 @@ namespace AppFileTextProcessor.Services
                         esito.Clear();
                     }
 
-                    protocollo = trimmedLine.Substring(0, 11);
-                    identificativo = trimmedLine.Substring(12);
+                    protocollo = cleanedLine.Substring(0, 11);
+                    identificativo = cleanedLine.Substring(12);
                     newRecord = true;
                 }
                 else
                 {
                     if (newRecord)
                     {
-                        esito.AppendLine(trimmedLine);
+                        esito.AppendLine(cleanedLine);
                     }
                 }
             }
@@ -53,11 +52,13 @@ namespace AppFileTextProcessor.Services
             return processedData;
         }
 
-        // Funzione per rimuovere i caratteri invisibili e non stampabili
-        private string RimuoviCaratteriInvisibili(string input)
+        private string NormalizeText(string input)
         {
-            // Rimuove caratteri che non sono visibili, tranne gli accenti e i caratteri standard visibili
-            return Regex.Replace(input, @"[^\x20-\x7EÀ-ÿ]", " ");
+            // Normalizza il testo rimuovendo caratteri speciali e invisibili
+            input = Regex.Replace(input, "[\u200B-\u200D\uFEFF]", ""); // Rimuove caratteri zero-width
+            input = Regex.Replace(input, "[\x00-\x1F\x7F]+", " "); // Rimuove caratteri di controllo non stampabili
+            input = Regex.Replace(input, "\\s+", " ").Trim(); // Rimuove spazi multipli e trim
+            return input;
         }
     }
 }
