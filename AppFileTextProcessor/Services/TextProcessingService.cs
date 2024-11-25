@@ -2,63 +2,57 @@
 using System.Text.RegularExpressions;
 using System.Text;
 
-namespace AppFileTextProcessor.Services
+namespace AppFileTextProcessor.Service
 {
     public class TextProcessingService : ITextProcessingService
     {
         public List<(string Protocollo, string Identificativo, string Esito)> ProcessContent(string content)
         {
-            var lines = content.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
-            var processedData = new List<(string Protocollo, string Identificativo, string Esito)>();
+            var data = new List<(string Protocollo, string Identificativo, string Esito)>();
+            var lines = content.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
 
-            string protocollo = null;
-            string identificativo = null;
-            StringBuilder esito = new StringBuilder();
-            bool newRecord = false;
+            string protocolloPattern = "^2024\\d{7}";
+            string identificativoPattern = "([A-Z0-9]{16}|\\d{11})";
+
+            string currentProtocollo = null;
+            string currentIdentificativo = null;
+            StringBuilder esitoBuilder = new StringBuilder();
 
             foreach (var line in lines)
             {
-                string cleanedLine = Regex.Replace(line, "[\t\x00-\x1F]+", " ").Trim();
-                cleanedLine = Regex.Replace(cleanedLine, "\\s+", " "); // Rimuove spazi multipli e tabulazioni
-                cleanedLine = NormalizeText(cleanedLine); // Normalizza il testo
-
-                // Riconoscere la riga contenente il Protocollo
-                if (Regex.IsMatch(cleanedLine, @"^2024\d{7}\s[A-Z0-9]{11,16}$"))
+                string trimmedLine = line.TrimEnd();
+                if (trimmedLine.StartsWith("2024") && trimmedLine.Length > 12)
                 {
-                    if (newRecord)
+                    var parts = trimmedLine.Split(new char[] { '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length >= 2 && Regex.IsMatch(parts[0], protocolloPattern) && Regex.IsMatch(parts[1], identificativoPattern))
                     {
-                        processedData.Add((protocollo, identificativo, esito.ToString().Trim()));
-                        esito.Clear();
-                    }
+                        if (currentProtocollo != null && currentIdentificativo != null)
+                        {
+                            string esito = esitoBuilder.ToString().Trim();
+                            data.Add((currentProtocollo, currentIdentificativo, esito));
+                        }
+                        esitoBuilder.Clear();
 
-                    protocollo = cleanedLine.Substring(0, 11);
-                    identificativo = cleanedLine.Substring(12);
-                    newRecord = true;
+                        currentProtocollo = parts[0].Trim();
+                        currentIdentificativo = parts[1].Trim();
+                    }
                 }
                 else
                 {
-                    if (newRecord)
+                    if (!string.IsNullOrWhiteSpace(trimmedLine))
                     {
-                        esito.AppendLine(cleanedLine);
+                        esitoBuilder.AppendLine(trimmedLine);
                     }
                 }
             }
 
-            if (newRecord)
+            if (currentProtocollo != null && currentIdentificativo != null)
             {
-                processedData.Add((protocollo, identificativo, esito.ToString().Trim()));
+                string esito = esitoBuilder.ToString().Trim();
+                data.Add((currentProtocollo, currentIdentificativo, esito));
             }
 
-            return processedData;
-        }
-
-        private string NormalizeText(string input)
-        {
-            // Normalizza il testo rimuovendo caratteri speciali e invisibili
-            input = Regex.Replace(input, "[\u200B-\u200D\uFEFF]", ""); // Rimuove caratteri zero-width
-            input = Regex.Replace(input, "[\x00-\x1F\x7F]+", " "); // Rimuove caratteri di controllo non stampabili
-            input = Regex.Replace(input, "\\s+", " ").Trim(); // Rimuove spazi multipli e trim
-            return input;
+            return data;
         }
     }
 }

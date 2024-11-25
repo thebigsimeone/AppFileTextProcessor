@@ -1,4 +1,5 @@
 using AppFileTextProcessor.Interface;
+using AppFileTextProcessor.Service;
 using AppFileTextProcessor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,7 +20,13 @@ builder.Services.AddSwaggerGen();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Error");
+    app.UseStatusCodePagesWithReExecute("/error/{0}");
+    app.UseHsts();
+}
+else
 {
     app.UseDeveloperExceptionPage();
 }

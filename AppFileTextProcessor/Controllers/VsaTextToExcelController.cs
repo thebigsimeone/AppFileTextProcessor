@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Mvc;
 using OfficeOpenXml;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace TextFileProcessor.Controllers
 {
@@ -42,6 +41,12 @@ namespace TextFileProcessor.Controllers
             }
 
             var processedData = _textProcessingService.ProcessContent(content);
+
+            if (processedData == null || processedData.Count == 0)
+            {
+                return BadRequest("Nessun dato trovato nel file di input.");
+            }
+
             SaveToExcel(processedData, outputFilePath);
 
             return Ok("File elaborato e salvato correttamente.");
@@ -56,19 +61,22 @@ namespace TextFileProcessor.Controllers
             {
                 var worksheet = package.Workbook.Worksheets.Add("Foglio1");
 
+                // Imposta i titoli delle colonne
                 worksheet.Cells[1, 1].Value = "Protocollo";
                 worksheet.Cells[1, 2].Value = "Identificativo";
                 worksheet.Cells[1, 3].Value = "ESITO";
 
+                // Popola il foglio di lavoro con i dati processati
                 for (int i = 0; i < data.Count; i++)
                 {
                     worksheet.Cells[i + 2, 1].Value = data[i].Protocollo;
-                    worksheet.Cells[i + 2, 2].Value = data[i].Identificativo;
+                    worksheet.Cells[i + 2, 2].Value = "'" + data[i].Identificativo; // Mantenere gli zeri iniziali per l'identificativo
                     worksheet.Cells[i + 2, 3].Value = data[i].Esito;
                 }
 
-                // Imposta la formattazione delle celle come testo
+                // Imposta la formattazione delle celle come testo per mantenere la consistenza dei dati
                 worksheet.Cells[1, 1, data.Count + 1, 3].Style.Numberformat.Format = "@";
+                worksheet.Cells.AutoFitColumns(); // Adatta automaticamente le colonne al contenuto
 
                 var fileInfo = new FileInfo(outputFilePath);
                 package.SaveAs(fileInfo);
