@@ -9,6 +9,7 @@ builder.Services.AddScoped<IAppTextProcessingService, AppTextProcessingService>(
 builder.Services.AddScoped<IAnagraficaService, AnagraficaService>();
 builder.Services.AddScoped<IComuniService, ComuniService>();
 builder.Services.AddScoped<ITextProcessingService, TextProcessingService>();
+builder.Services.AddScoped<IExcelExportService, ExcelExportService>();
 
 builder.Services.AddControllers();
 
