@@ -21,18 +21,19 @@ namespace AppFileTextProcessor.Service
             foreach (var line in lines)
             {
                 string trimmedLine = line.TrimEnd();
-                if (trimmedLine.StartsWith("2024") && trimmedLine.Length > 12)
-                {
-                    var parts = trimmedLine.Split(new char[] { '\t' }, StringSplitOptions.RemoveEmptyEntries);
-                    if (parts.Length >= 2 && Regex.IsMatch(parts[0], protocolloPattern) && Regex.IsMatch(parts[1], identificativoPattern))
-                    {
-                        if (currentProtocollo != null && currentIdentificativo != null)
-                        {
-                            string esito = esitoBuilder.ToString().Trim();
-                            data.Add((currentProtocollo, currentIdentificativo, esito));
-                        }
-                        esitoBuilder.Clear();
 
+                if (Regex.IsMatch(trimmedLine, protocolloPattern) && Regex.IsMatch(trimmedLine, identificativoPattern))
+                {
+                    if (currentProtocollo != null && currentIdentificativo != null)
+                    {
+                        string esito = esitoBuilder.ToString().Trim();
+                        data.Add((currentProtocollo, currentIdentificativo, esito));
+                    }
+                    esitoBuilder.Clear();
+
+                    var parts = trimmedLine.Split(new char[] { '\t', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length >= 2)
+                    {
                         currentProtocollo = parts[0].Trim();
                         currentIdentificativo = parts[1].Trim();
                     }

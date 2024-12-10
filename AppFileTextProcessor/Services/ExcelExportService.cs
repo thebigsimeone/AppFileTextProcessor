@@ -7,7 +7,6 @@ namespace AppFileTextProcessor.Services
     {
         public void SaveToExcel(List<(string Protocollo, string Identificativo, string Esito)> data, string outputFilePath)
         {
-            // Imposta il contesto della licenza di EPPlus
             ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
             using (var package = new ExcelPackage())
@@ -25,8 +24,8 @@ namespace AppFileTextProcessor.Services
                     worksheet.Cells[i + 2, 3].Value = data[i].Esito;
                 }
 
-                // Imposta la formattazione delle celle come testo
                 worksheet.Cells[1, 1, data.Count + 1, 3].Style.Numberformat.Format = "@";
+                worksheet.Cells[1, 1, data.Count + 1, 3].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Left;
 
                 var fileInfo = new FileInfo(outputFilePath);
                 package.SaveAs(fileInfo);
