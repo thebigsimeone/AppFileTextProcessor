@@ -52,27 +52,27 @@ namespace AppFileTextProcessor.Controllers
 
                 for (int row = 2; row <= worksheet.Dimension.End.Row; row++) // Partendo dalla riga 2 per saltare l'intestazione
                 {
-                    var phoneNumbers = worksheet.Cells[row, 19].Text?.Trim(); // Colonna S (19-esima colonna)
+                    var phoneNumbers = worksheet.Cells[row, 22].Text?.TrimStart(); // Colonna S (19-esima colonna)
 
                     if (string.IsNullOrEmpty(phoneNumbers) || phoneNumbers.Contains("NON RISALIBILE"))
                     {
-                        worksheet.Cells[row, 19].Value = "NON RISALIBILE";
-                        worksheet.Cells[row, 20].Value = null;
-                        worksheet.Cells[row, 21].Value = null;
-                        worksheet.Cells[row, 22].Value = null;
+                        worksheet.Cells[row, 22].Value = "NON RISALIBILE";
+                        worksheet.Cells[row, 23].Value = null;
+                        worksheet.Cells[row, 24].Value = null;
+                        worksheet.Cells[row, 25].Value = null;
                         continue;
                     }
 
                     var phones = SplitPhoneNumbers(phoneNumbers);
 
-                    worksheet.Cells[row, 19].Value = phones.Item1; // Linea fissa (Telefono cedente)
-                    worksheet.Cells[row, 20].Value = phones.Item2; // Linea fissa (Telefono alternativo cedente)
-                    worksheet.Cells[row, 21].Value = phones.Item3; // Cellulare primario (Cellulare cedente)
-                    worksheet.Cells[row, 22].Value = phones.Item4; // Cellulare alternativo (Cellulare alternativo cedente)
+                    worksheet.Cells[row, 22].Value = phones.Item1; // Linea fissa (Telefono cedente)
+                    worksheet.Cells[row, 23].Value = phones.Item2; // Linea fissa (Telefono alternativo cedente)
+                    worksheet.Cells[row, 24].Value = phones.Item3; // Cellulare primario (Cellulare cedente)
+                    worksheet.Cells[row, 25].Value = phones.Item4; // Cellulare alternativo (Cellulare alternativo cedente)
                 }
 
                 // Imposta la formattazione delle celle come testo
-                worksheet.Cells[2, 19, worksheet.Dimension.End.Row, 22].Style.Numberformat.Format = "@";
+                worksheet.Cells[2, 22, worksheet.Dimension.End.Row, 25].Style.Numberformat.Format = "@";
 
                 package.SaveAs(new FileInfo(outputFilePath));
             }
