@@ -11,7 +11,9 @@ namespace AppFileTextProcessor.Service
             var data = new List<(string Protocollo, string Identificativo, string Esito)>();
             var lines = content.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
 
-            string protocolloPattern = "^2024\\d{7}";
+            string anno = DateTime.Now.Year.ToString();
+
+            string protocolloPattern = $"^{anno}\\d{{7}}";
             string identificativoPattern = "([A-Z0-9]{16}|\\d{11})";
 
             string currentProtocollo = null;
