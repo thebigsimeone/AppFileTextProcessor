@@ -11,6 +11,10 @@ builder.Services.AddScoped<IComuniService, ComuniService>();
 builder.Services.AddScoped<ITextProcessingService, TextProcessingService>();
 builder.Services.AddScoped<IExcelExportService, ExcelExportService>();
 
+// Registrazione dei nuovi servizi
+builder.Services.AddScoped<IExcelProcessingMassService, ExcelProcessingMassService>();
+builder.Services.AddScoped<IAtecoService, AtecoService>();
+
 builder.Services.AddControllers();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
