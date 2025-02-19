@@ -1,8 +1,6 @@
 ﻿using AppFileTextProcessor.Interface;
 using Microsoft.AspNetCore.Mvc;
-using OfficeOpenXml;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace TextFileProcessor.Controllers
 {
