@@ -8,7 +8,7 @@ namespace AppFileTextProcessor.Controllers
     [Route("api/[controller]")]
     public class PhoneNumberProcessorController : ControllerBase
     {
-        private const string BaseDirectory = @"C:\Users\Utente\Desktop\MA7_EUROSTA\";
+        private const string BaseDirectory = @"C:\Users\Programmatore.Test\Desktop\MA7_EUROSTA\";
 
         [HttpPost("process")]
         public IActionResult ProcessPhoneNumbers([FromQuery] string inputFileName, [FromQuery] string outputFileName)
