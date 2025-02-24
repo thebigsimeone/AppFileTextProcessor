@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 [Route("api/[controller]")]
 public class VsaMassExcelController : ControllerBase
 {
-    private const string BaseDirectory = @"C:\Users\Programmatore.Test\Desktop\VSA\";
+    private const string BaseDirectory = @"C:\Users\Flavio.Simeone\Desktop\VSA\";
     private const string DefaultInputFileName = "VSA_MASS.xlsx";
     private const string DefaultOutputFileName = "VSA_MASS_FINALE.xlsx";
 

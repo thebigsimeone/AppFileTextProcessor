@@ -8,7 +8,7 @@ namespace TextFileProcessor.Controllers
     [Route("api/[controller]")]
     public class MimTextToExcelController : ControllerBase
     {
-        private const string BaseDirectory = @"C:\Users\Programmatore.Test\Desktop\MIM\";
+        private const string BaseDirectory = @"C:\Users\Flavio.Simeone\Desktop\MIM\";
         private const string DefaultInputFileName = "MIM_INIZIALE.txt";
         private const string DefaultOutputFileName = "MIM_FINALE.xlsx";
         private readonly ITextProcessingService _textProcessingService;

@@ -1,10 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using OfficeOpenXml;
-using System;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace AppFileTextProcessor.Controllers
 {

@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using OfficeOpenXml;
 
 namespace AppFileTextProcessor.Controllers
@@ -8,7 +7,7 @@ namespace AppFileTextProcessor.Controllers
     [Route("api/[controller]")]
     public class PhoneNumberProcessorController : ControllerBase
     {
-        private const string BaseDirectory = @"C:\Users\Programmatore.Test\Desktop\MA7_EUROSTA\";
+        private const string BaseDirectory = @"C:\Users\Flavio.Simeone\Desktop\MA7_EUROSTA\";
 
         [HttpPost("process")]
         public IActionResult ProcessPhoneNumbers([FromQuery] string inputFileName, [FromQuery] string outputFileName)

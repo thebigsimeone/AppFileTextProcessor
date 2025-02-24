@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json.Linq;
 using OfficeOpenXml;
 using System.Globalization;
@@ -17,9 +16,9 @@ namespace AppFileTextProcessor.Controllers
 
         public CodiceFiscaleController()
         {
-            _comuni = LoadComuniFromJson(@"C:\Users\Programmatore.Test\Desktop\PublishedApp\AppFileTextProcessor\json\comuni.json");
-            _elencoComuniItaliani = LoadElencoComuniItalianiFromJson(@"C:\Users\Programmatore.Test\Desktop\PublishedApp\AppFileTextProcessor\json\Elenco-comuni-italiani.json");
-            _elencoStatiEsteri = LoadElencoStatiEsteriFromJson(@"C:\Users\Programmatore.Test\Desktop\PublishedApp\AppFileTextProcessor\json\Elenco-stati-esteri.json");
+            _comuni = LoadComuniFromJson(@"C:\Users\Flavio.Simeone\Desktop\PublishedApp\AppFileTextProcessor\json\comuni.json");
+            _elencoComuniItaliani = LoadElencoComuniItalianiFromJson(@"C:\Users\Flavio.Simeone\Desktop\PublishedApp\AppFileTextProcessor\json\Elenco-comuni-italiani.json");
+            _elencoStatiEsteri = LoadElencoStatiEsteriFromJson(@"C:\Users\Flavio.Simeone\Desktop\PublishedApp\AppFileTextProcessor\json\Elenco-stati-esteri.json");
         }
 
         [HttpPost("process")]

@@ -8,7 +8,7 @@ namespace TextFileProcessor.Controllers
     [Route("api/[controller]")]
     public class VsaTextToExcelController : ControllerBase
     {
-        private const string BaseDirectory = @"C:\Users\Programmatore.Test\Desktop\VSA\";
+        private const string BaseDirectory = @"C:\Users\Flavio.Simeone\Desktop\VSA\";
         private const string DefaultInputFileName = "VSA_INIZIALE.txt";
         private const string DefaultOutputFileName = "VSA_FINALE.xlsx";
         private readonly ITextProcessingService _textProcessingService;
