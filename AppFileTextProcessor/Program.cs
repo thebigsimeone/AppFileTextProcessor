@@ -21,6 +21,9 @@ builder.Services.AddScoped<IExcelExportService, ExcelExportService>();
 builder.Services.AddScoped<IExcelProcessingMassService, ExcelProcessingMassService>();
 builder.Services.AddScoped<IAtecoService, AtecoService>();
 
+builder.Services.AddScoped<IPdfProcessingService, PdfProcessingService>();
+builder.Services.AddScoped<IPdfReplaceService, PdfReplaceService>();
+
 builder.Services.AddControllers();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
