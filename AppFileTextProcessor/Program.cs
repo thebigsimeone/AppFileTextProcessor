@@ -4,12 +4,6 @@ using AppFileTextProcessor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configura Kestrel per ascoltare su IP e porta specifica
-builder.WebHost.ConfigureKestrel(options =>
-{
-    options.ListenAnyIP(5180); // Usa la stessa porta di AppComunicazioni
-});
-
 // Add services to the container.
 builder.Services.AddScoped<IAppTextProcessingService, AppTextProcessingService>();
 builder.Services.AddScoped<IAnagraficaService, AnagraficaService>();
@@ -20,9 +14,6 @@ builder.Services.AddScoped<IExcelExportService, ExcelExportService>();
 // Registrazione dei nuovi servizi
 builder.Services.AddScoped<IExcelProcessingMassService, ExcelProcessingMassService>();
 builder.Services.AddScoped<IAtecoService, AtecoService>();
-
-builder.Services.AddScoped<IPdfProcessingService, PdfProcessingService>();
-builder.Services.AddScoped<IPdfReplaceService, PdfReplaceService>();
 
 builder.Services.AddControllers();
 
