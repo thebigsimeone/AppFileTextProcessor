@@ -2,7 +2,7 @@
 using System.Text.RegularExpressions;
 using System.Text;
 
-namespace AppFileTextProcessor.Service
+namespace AppFileTextProcessor.Services
 {
     public class TextProcessingService : ITextProcessingService
     {

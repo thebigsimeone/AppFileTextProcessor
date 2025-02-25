@@ -1,6 +1,7 @@
+using AppFileTextProcessor.Helpers;
 using AppFileTextProcessor.Interface;
-using AppFileTextProcessor.Service;
 using AppFileTextProcessor.Services;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +12,8 @@ builder.Services.AddScoped<IComuniService, ComuniService>();
 builder.Services.AddScoped<ITextProcessingService, TextProcessingService>();
 builder.Services.AddScoped<IExcelExportService, ExcelExportService>();
 
+builder.Services.AddScoped<IPdfProcessingService, PdfProcessingService>();
+
 // Registrazione dei nuovi servizi
 builder.Services.AddScoped<IExcelProcessingMassService, ExcelProcessingMassService>();
 builder.Services.AddScoped<IAtecoService, AtecoService>();
@@ -20,7 +23,13 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "TextFileProcessor API V2", Version = "v1" });
+
+    // Abilita il supporto per `multipart/form-data` nei modelli con `IFormFile`
+    c.SchemaFilter<SwaggerFileSchemaFilter>();
+});
 
 var app = builder.Build();
 
