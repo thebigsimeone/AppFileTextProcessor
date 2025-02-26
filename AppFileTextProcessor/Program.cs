@@ -2,8 +2,14 @@ using AppFileTextProcessor.Helpers;
 using AppFileTextProcessor.Interface;
 using AppFileTextProcessor.Services;
 using Microsoft.OpenApi.Models;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .WriteTo.File("logs/log.txt", rollingInterval: RollingInterval.Day)
+    .CreateLogger();
 
 // Add services to the container.
 builder.Services.AddScoped<IAppTextProcessingService, AppTextProcessingService>();
@@ -51,7 +57,6 @@ app.UseSwaggerUI(c =>
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "TextFileProcessor API V2");
     c.RoutePrefix = string.Empty; // Set Swagger UI at the app's root
 });
-
 
 app.UseAuthorization();
 
