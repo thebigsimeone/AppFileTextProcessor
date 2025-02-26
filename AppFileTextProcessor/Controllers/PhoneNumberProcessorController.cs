@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using OfficeOpenXml;
+using Swashbuckle.AspNetCore.Annotations;
+using Serilog;
 
 namespace AppFileTextProcessor.Controllers
 {
@@ -9,11 +11,23 @@ namespace AppFileTextProcessor.Controllers
     {
         private const string BaseDirectory = @"C:\Users\Flavio.Simeone\Desktop\MA7_EUROSTA\";
 
+        /// <summary>
+        /// Elabora un file Excel e suddivide i numeri di telefono in colonne specifiche.
+        /// </summary>
+        /// <param name="inputFileName">Nome del file Excel di input (senza estensione)</param>
+        /// <param name="outputFileName">Nome del file Excel di output (senza estensione)</param>
+        /// <returns>Messaggio di esito dell'elaborazione</returns>
         [HttpPost("process")]
+        [SwaggerOperation(Summary = "Elabora un file Excel per suddividere i numeri di telefono", Description = "Legge un file Excel, analizza i numeri di telefono e li suddivide in più colonne.")]
+        [SwaggerResponse(200, "File elaborato e salvato correttamente.")]
+        [SwaggerResponse(400, "I nomi dei file di input e output sono obbligatori.")]
+        [SwaggerResponse(404, "File di input non trovato.")]
+        [SwaggerResponse(500, "Errore interno del server.")]
         public IActionResult ProcessPhoneNumbers([FromQuery] string inputFileName, [FromQuery] string outputFileName)
         {
             if (string.IsNullOrWhiteSpace(inputFileName) || string.IsNullOrWhiteSpace(outputFileName))
             {
+                Log.Warning("Nome file non valido: input = {InputFile}, output = {OutputFile}", inputFileName, outputFileName);
                 return BadRequest("I nomi dei file di input e output sono obbligatori.");
             }
 
@@ -22,16 +36,19 @@ namespace AppFileTextProcessor.Controllers
 
             if (!System.IO.File.Exists(inputFilePath))
             {
-                return BadRequest("File di input non trovato.");
+                Log.Warning("File di input non trovato: {FilePath}", inputFilePath);
+                return NotFound("File di input non trovato.");
             }
 
             try
             {
                 ProcessExcelFile(inputFilePath, outputFilePath);
+                Log.Information("File elaborato con successo: {OutputFilePath}", outputFilePath);
                 return Ok("File elaborato e salvato correttamente.");
             }
             catch (Exception ex)
             {
+                Log.Error(ex, "Errore durante l'elaborazione del file: {FilePath}", inputFilePath);
                 return StatusCode(500, $"Errore durante l'elaborazione del file: {ex.Message}");
             }
         }
@@ -46,12 +63,16 @@ namespace AppFileTextProcessor.Controllers
 
                 if (worksheet == null)
                 {
+                    Log.Warning("Il foglio di lavoro 'Foglio1' non esiste nel file Excel: {FilePath}", inputFilePath);
                     throw new Exception("Il foglio di lavoro 'Foglio1' non esiste nel file Excel.");
                 }
 
-                for (int row = 2; row <= worksheet.Dimension.End.Row; row++) // Partendo dalla riga 2 per saltare l'intestazione
+                int totalRows = worksheet.Dimension.End.Row;
+                Log.Information("Elaborazione di {TotalRows} righe nel file: {FilePath}", totalRows, inputFilePath);
+
+                for (int row = 2; row <= totalRows; row++) // Partendo dalla riga 2 per saltare l'intestazione
                 {
-                    var phoneNumbers = worksheet.Cells[row, 22].Text?.TrimStart(); // Colonna S (19-esima colonna)
+                    var phoneNumbers = worksheet.Cells[row, 22].Text?.TrimStart(); // Colonna S (22-esima colonna)
 
                     if (string.IsNullOrEmpty(phoneNumbers) || phoneNumbers.Contains("NON RISALIBILE"))
                     {
@@ -71,9 +92,10 @@ namespace AppFileTextProcessor.Controllers
                 }
 
                 // Imposta la formattazione delle celle come testo
-                worksheet.Cells[2, 22, worksheet.Dimension.End.Row, 25].Style.Numberformat.Format = "@";
+                worksheet.Cells[2, 22, totalRows, 25].Style.Numberformat.Format = "@";
 
                 package.SaveAs(new FileInfo(outputFilePath));
+                Log.Information("File Excel elaborato e salvato: {OutputFilePath}", outputFilePath);
             }
         }
 

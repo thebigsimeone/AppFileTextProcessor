@@ -3,6 +3,8 @@ using Newtonsoft.Json.Linq;
 using OfficeOpenXml;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using Swashbuckle.AspNetCore.Annotations;
+using Serilog;
 
 namespace AppFileTextProcessor.Controllers
 {
@@ -21,11 +23,21 @@ namespace AppFileTextProcessor.Controllers
             _elencoStatiEsteri = LoadElencoStatiEsteriFromJson(@"C:\Users\Flavio.Simeone\Desktop\PublishedApp\AppFileTextProcessor\json\Elenco-stati-esteri.json");
         }
 
+        /// <summary>
+        /// Elabora un file Excel e calcola i codici fiscali.
+        /// </summary>
+        /// <param name="file">File Excel contenente i dati anagrafici</param>
+        /// <returns>File Excel con i codici fiscali calcolati</returns>
         [HttpPost("process")]
+        [SwaggerOperation(Summary = "Elabora un file Excel per calcolare il codice fiscale", Description = "Legge un file Excel con i dati anagrafici e genera i codici fiscali.")]
+        [SwaggerResponse(200, "File elaborato con successo.")]
+        [SwaggerResponse(400, "File di input non valido o non trovato.")]
+        [SwaggerResponse(500, "Errore interno del server.")]
         public IActionResult ProcessExcel(IFormFile file)
         {
             if (file == null || file.Length == 0)
             {
+                Log.Warning("File di input non fornito o vuoto.");
                 return BadRequest("File non trovato o vuoto.");
             }
 
@@ -35,10 +47,9 @@ namespace AppFileTextProcessor.Controllers
                 using (var package = new ExcelPackage(file.OpenReadStream()))
                 {
                     var worksheet = package.Workbook.Worksheets[0];
-
                     int totalRows = worksheet.Dimension.Rows;
 
-                    for (int row = 2; row <= totalRows; row++)  // Salta l'intestazione
+                    for (int row = 2; row <= totalRows; row++) // Salta l'intestazione
                     {
                         string cognome = worksheet.Cells[row, 1].Text;
                         string nome = worksheet.Cells[row, 2].Text;
@@ -47,31 +58,29 @@ namespace AppFileTextProcessor.Controllers
                         string luogoNascita = worksheet.Cells[row, 5].Text;
                         string provincia = worksheet.Cells[row, 6].Text;
 
-                        DateTime dataNascita = DateTime.ParseExact(dataNascitaStr, "dd/MM/yyyy", CultureInfo.InvariantCulture);
+                        if (!DateTime.TryParseExact(dataNascitaStr, "dd/MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime dataNascita))
+                        {
+                            Log.Warning("Formato data non valido alla riga {Row}: {Data}", row, dataNascitaStr);
+                            worksheet.Cells[row, 7].Value = "Errore nella data di nascita";
+                            continue;
+                        }
 
                         string codiceFiscale = CalcolaCodiceFiscale(cognome, nome, sesso, dataNascita, luogoNascita, provincia);
-                        if (codiceFiscale.Contains("Comune non trovato"))
-                        {
-                            worksheet.Cells[row, 7].Value = "Comune non trovato: " + luogoNascita;
-                        }
-                        else
-                        {
-                            worksheet.Cells[row, 7].Value = codiceFiscale;  // Inserisce il codice fiscale nella settima colonna
-                        }
-                        
+                        worksheet.Cells[row, 7].Value = codiceFiscale.Contains("Comune non trovato") ? $"Comune non trovato: {luogoNascita}" : codiceFiscale;
                     }
 
                     var stream = new MemoryStream();
                     package.SaveAs(stream);
                     stream.Position = 0;
 
-                    // Ritorna il file elaborato
+                    Log.Information("Elaborazione completata con successo.");
                     return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Codici_Fiscali_Elaborati.xlsx");
                 }
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Errore interno: {ex.Message}");
+                Log.Error(ex, "Errore durante l'elaborazione del file Excel.");
+                return StatusCode(500, $"Errore interno del server: {ex.Message}");
             }
         }
 
@@ -81,9 +90,10 @@ namespace AppFileTextProcessor.Controllers
             string codiceNome = CalcolaNome(nome);
             string codiceDataSesso = CalcolaDataSesso(dataNascita, sesso);
             string codiceCatastale = CalcolaCodiceCatastale(luogoNascita, provincia);
+            if (codiceCatastale == "Comune non trovato") return codiceCatastale;
+
             string codiceBase = codiceCognome + codiceNome + codiceDataSesso + codiceCatastale;
             string carattereControllo = CalcolaCarattereControllo(codiceBase);
-
             return codiceBase + carattereControllo;
         }
 
@@ -154,30 +164,21 @@ namespace AppFileTextProcessor.Controllers
 
         private string CalcolaCodiceCatastale(string luogoNascita, string provincia)
         {
-            // Normalizza il nome del comune rimuovendo spazi e caratteri speciali
             luogoNascita = NormalizeComuneName(luogoNascita);
 
-            if (_comuni.ContainsKey(luogoNascita))
-            {
-                return _comuni[luogoNascita];
-            }
-            else if (_elencoComuniItaliani.ContainsKey(luogoNascita))  // Cerca nel secondo file JSON
-            {
-                return _elencoComuniItaliani[luogoNascita];
-            }
-            else if (_elencoStatiEsteri.ContainsKey(luogoNascita))  // Cerca nel secondo file JSON
-            {
-                return _elencoStatiEsteri[luogoNascita];
-            }
-            else
-            {
-                return "Comune non trovato";  // Restituisci un messaggio nel caso non trovi il comune
-            }
+            if (_comuni.TryGetValue(luogoNascita, out string codice))
+                return codice;
+            if (_elencoComuniItaliani.TryGetValue(luogoNascita, out codice))
+                return codice;
+            if (_elencoStatiEsteri.TryGetValue(luogoNascita, out codice))
+                return codice;
+
+            Log.Warning("Comune non trovato: {Luogo}", luogoNascita);
+            return "Comune non trovato";
         }
 
         private string NormalizeComuneName(string name)
         {
-            // Rimuove spazi e normalizza maiuscole/minuscole
             return Regex.Replace(name.Trim().ToUpper(), @"\s+", " ");
         }
 
@@ -265,58 +266,22 @@ namespace AppFileTextProcessor.Controllers
 
         private Dictionary<string, string> LoadComuniFromJson(string path)
         {
-            var comuni = new Dictionary<string, string>();
-            var json = System.IO.File.ReadAllText(path);
-            var jsonArray = JArray.Parse(json);
-
-            foreach (var item in jsonArray)
-            {
-                string nome = item["nome"].ToString().ToUpper();
-                string codiceCatastale = item["codiceCatastale"].ToString();
-                comuni[nome] = codiceCatastale;
-            }
-
-            return comuni;
+            return JArray.Parse(System.IO.File.ReadAllText(path))
+                .ToDictionary(item => item["nome"].ToString().ToUpper(), item => item["codiceCatastale"].ToString());
         }
+
         private Dictionary<string, string> LoadElencoComuniItalianiFromJson(string path)
         {
-            var comuni = new Dictionary<string, string>();
+            var jsonObject = JObject.Parse(System.IO.File.ReadAllText(path));
+            return ((JArray)jsonObject["CODICI al 30-06-2024"])
+                .ToDictionary(item => item["Denominazione in italiano"].ToString().ToUpper(), item => item["Codice Catastale del comune"].ToString());
+        }
 
-            var json = System.IO.File.ReadAllText(path);
-
-            var jsonObject = JObject.Parse(json);
-
-            // Accedi all'array contenuto nella proprietà "CODICI al 30-06-2024"
-            var jsonArray = (JArray)jsonObject["CODICI al 30-06-2024"];
-
-            foreach (var item in jsonArray)
-            {
-                string nomeComune = item["Denominazione in italiano"].ToString().ToUpper();
-                string codiceCatastale = item["Codice Catastale del comune"].ToString();
-                comuni[nomeComune] = codiceCatastale;
-            }
-
-            return comuni;
-        }        
         private Dictionary<string, string> LoadElencoStatiEsteriFromJson(string path)
         {
-            var comuni = new Dictionary<string, string>();
-
-            var json = System.IO.File.ReadAllText(path);
-
-            var jsonObject = JObject.Parse(json);
-
-            // Accedi all'array contenuto nella proprietà "CODICI al 30-06-2024"
-            var jsonArray = (JArray)jsonObject["NAZIONI"];
-
-            foreach (var item in jsonArray)
-            {
-                string nomeComune = item["Nazione"].ToString().ToUpper();
-                string codiceCatastale = item["Codice"].ToString();
-                comuni[nomeComune] = codiceCatastale;
-            }
-
-            return comuni;
+            var jsonObject = JObject.Parse(System.IO.File.ReadAllText(path));
+            return ((JArray)jsonObject["NAZIONI"])
+                .ToDictionary(item => item["Nazione"].ToString().ToUpper(), item => item["Codice"].ToString());
         }
 
     }

@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using OfficeOpenXml;
+using Swashbuckle.AspNetCore.Annotations;
+using Serilog;
 
 namespace AppFileTextProcessor.Controllers
 {
@@ -7,88 +9,112 @@ namespace AppFileTextProcessor.Controllers
     [ApiController]
     public class ExcelMergerController : ControllerBase
     {
+        /// <summary>
+        /// Unisce due file Excel e mescola le righe (escludendo l'intestazione).
+        /// </summary>
+        /// <param name="file1">Primo file Excel</param>
+        /// <param name="file2">Secondo file Excel</param>
+        /// <returns>File Excel unito e mescolato</returns>
         [HttpPost("merge")]
+        [SwaggerOperation(Summary = "Unisce due file Excel e mescola le righe", Description = "Combina due file Excel mantenendo l'intestazione e mescola le righe.")]
+        [SwaggerResponse(200, "File elaborato e restituito con successo.")]
+        [SwaggerResponse(400, "Entrambi i file devono essere forniti.")]
+        [SwaggerResponse(500, "Errore interno del server.")]
         public async Task<IActionResult> MergeExcelFiles(IFormFile file1, IFormFile file2)
         {
             if (file1 == null || file2 == null)
             {
-                return BadRequest("Both files are required.");
+                Log.Warning("Uno o entrambi i file non sono stati forniti.");
+                return BadRequest("Entrambi i file devono essere forniti.");
             }
 
-            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-
-            using (var package1 = new ExcelPackage(file1.OpenReadStream()))
-            using (var package2 = new ExcelPackage(file2.OpenReadStream()))
-            using (var outputPackage = new ExcelPackage())
+            try
             {
-                var sheet1 = package1.Workbook.Worksheets[0];
-                var sheet2 = package2.Workbook.Worksheets[0];
-                var outputSheet = outputPackage.Workbook.Worksheets.Add("CombinedSheet");
+                ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
-                int totalRows1 = sheet1.Dimension.Rows;
-                int totalColumns1 = sheet1.Dimension.Columns;
-                int totalRows2 = sheet2.Dimension.Rows;
-
-                // Copia l'intestazione dal primo file Excel (riga 1)
-                for (int col = 1; col <= totalColumns1; col++)
+                using (var package1 = new ExcelPackage(file1.OpenReadStream()))
+                using (var package2 = new ExcelPackage(file2.OpenReadStream()))
+                using (var outputPackage = new ExcelPackage())
                 {
-                    outputSheet.Cells[1, col].Value = sheet1.Cells[1, col].Value;
-                }
+                    var sheet1 = package1.Workbook.Worksheets[0];
+                    var sheet2 = package2.Workbook.Worksheets[0];
+                    var outputSheet = outputPackage.Workbook.Worksheets.Add("CombinedSheet");
 
-                // Unisci tutte le righe da entrambi i fogli (saltando l'intestazione)
-                int currentRow = 2;
-                for (int row = 2; row <= totalRows1; row++, currentRow++)
-                {
+                    int totalRows1 = sheet1.Dimension.Rows;
+                    int totalColumns1 = sheet1.Dimension.Columns;
+                    int totalRows2 = sheet2.Dimension.Rows;
+
+                    Log.Information("Unione di due file Excel: {File1} ({Rows1} righe), {File2} ({Rows2} righe)", file1.FileName, totalRows1, file2.FileName, totalRows2);
+
+                    // Copia l'intestazione dal primo file Excel (riga 1)
                     for (int col = 1; col <= totalColumns1; col++)
                     {
-                        outputSheet.Cells[currentRow, col].Value = sheet1.Cells[row, col].Value;
+                        outputSheet.Cells[1, col].Value = sheet1.Cells[1, col].Value;
                     }
-                }
 
-                for (int row = 2; row <= totalRows2; row++, currentRow++)
-                {
+                    // Unisci tutte le righe da entrambi i fogli (saltando l'intestazione)
+                    int currentRow = 2;
+                    for (int row = 2; row <= totalRows1; row++, currentRow++)
+                    {
+                        for (int col = 1; col <= totalColumns1; col++)
+                        {
+                            outputSheet.Cells[currentRow, col].Value = sheet1.Cells[row, col].Value;
+                        }
+                    }
+
+                    for (int row = 2; row <= totalRows2; row++, currentRow++)
+                    {
+                        for (int col = 1; col <= totalColumns1; col++)
+                        {
+                            outputSheet.Cells[currentRow, col].Value = sheet2.Cells[row, col].Value;
+                        }
+                    }
+
+                    // Ora mescola solo le righe (escludendo l'intestazione)
+                    var totalRowsCombined = currentRow - 1;
+                    var rows = Enumerable.Range(2, totalRowsCombined - 1).ToList();  // Prende tutte le righe tranne l'intestazione
+                    Random rand = new Random();
+                    rows = rows.OrderBy(x => rand.Next()).ToList();  // Mescola le righe
+
+                    Log.Information("Mescolamento completato: {TotalRows} righe mescolate.", totalRowsCombined - 1);
+
+                    // Crea un foglio temporaneo per tenere le righe mescolate
+                    var shuffledSheet = outputPackage.Workbook.Worksheets.Add("ShuffledSheet");
+
+                    // Copia l'intestazione nel foglio mescolato
                     for (int col = 1; col <= totalColumns1; col++)
                     {
-                        outputSheet.Cells[currentRow, col].Value = sheet2.Cells[row, col].Value;
+                        shuffledSheet.Cells[1, col].Value = outputSheet.Cells[1, col].Value;
                     }
-                }
 
-                // Ora mescola solo le righe (escludendo l'intestazione)
-                var totalRowsCombined = currentRow - 1;
-                var rows = Enumerable.Range(2, totalRowsCombined - 1).ToList();  // Prende tutte le righe tranne l'intestazione
-                Random rand = new Random();
-                rows = rows.OrderBy(x => rand.Next()).ToList();  // Mescola le righe
-
-                // Crea un foglio temporaneo per tenere le righe mescolate
-                var shuffledSheet = outputPackage.Workbook.Worksheets.Add("ShuffledSheet");
-
-                // Copia l'intestazione nel foglio mescolato
-                for (int col = 1; col <= totalColumns1; col++)
-                {
-                    shuffledSheet.Cells[1, col].Value = outputSheet.Cells[1, col].Value;
-                }
-
-                // Copia le righe mescolate nel nuovo foglio, mantenendo le celle intatte
-                int newRow = 2;
-                foreach (var row in rows)
-                {
-                    for (int col = 1; col <= totalColumns1; col++)
+                    // Copia le righe mescolate nel nuovo foglio, mantenendo le celle intatte
+                    int newRow = 2;
+                    foreach (var row in rows)
                     {
-                        shuffledSheet.Cells[newRow, col].Value = outputSheet.Cells[row, col].Value;
+                        for (int col = 1; col <= totalColumns1; col++)
+                        {
+                            shuffledSheet.Cells[newRow, col].Value = outputSheet.Cells[row, col].Value;
+                        }
+                        newRow++;
                     }
-                    newRow++;
+
+                    // Rimuovi il vecchio foglio non mescolato
+                    outputPackage.Workbook.Worksheets.Delete("CombinedSheet");
+
+                    // Salva il file di output in un MemoryStream
+                    var stream = new MemoryStream();
+                    outputPackage.SaveAs(stream);
+                    stream.Position = 0;
+
+                    var fileName = "Combined_Utenze_telefoniche_Shuffled.xlsx";
+                    Log.Information("File elaborato e salvato: {FileName}", fileName);
+                    return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
                 }
-
-                // Rimuovi il vecchio foglio non mescolato
-                outputPackage.Workbook.Worksheets.Delete("CombinedSheet");
-
-                // Salva il file di output in un MemoryStream
-                var stream = new MemoryStream();
-                outputPackage.SaveAs(stream);
-                stream.Position = 0;
-
-                var fileName = "Combined_Utenze_telefoniche_Shuffled.xlsx";
-                return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Errore durante la fusione dei file Excel.");
+                return StatusCode(500, $"Errore interno del server: {ex.Message}");
             }
         }
     }
