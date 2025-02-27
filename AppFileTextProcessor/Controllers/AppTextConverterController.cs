@@ -20,12 +20,12 @@ namespace TextFileProcessor.Controllers
 
             // Carica i comuni dai file JSON all'avvio del controller
             _comuniService.LoadComuniFromJson(
-                @"C:\Users\Utente\Desktop\PublishedApp\AppFileTextProcessor\json\comuni.json",
-                @"C:\Users\Utente\Desktop\PublishedApp\AppFileTextProcessor\json\Elenco-comuni-italiani.json"
+                @"C:\Users\Flavio.Simeone\Desktop\PublishedApp\AppFileTextProcessor\json\comuni.json",
+                @"C:\Users\Flavio.Simeone\Desktop\PublishedApp\AppFileTextProcessor\json\Elenco-comuni-italiani.json"
             );
         }
 
-        private const string BaseDirectory = @"C:\Users\Utente\Desktop\APPALTO\";
+        private const string BaseDirectory = @"C:\Users\Flavio.Simeone\Desktop\APPALTO\";
         private const string DefaultInputFileName = "APP_INIZIALE.txt";
 
         /// <summary>
