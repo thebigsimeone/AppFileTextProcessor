@@ -1,4 +1,4 @@
-﻿using AppFileTextProcessor.Interface;
+using AppFileTextProcessor.Interface;
 using Microsoft.Data.SqlClient;
 using System.Threading.Tasks;
 
@@ -15,8 +15,8 @@ namespace AppFileTextProcessor.Services
 
         public async Task<string> TrovaDenominazioneAsync(string codiceFiscale, string partitaIva)
         {
-            string connectionStringEbi = _configuration.GetConnectionString("DefaultConnection_EBI");
-            string connectionStringSsc = _configuration.GetConnectionString("DefaultConnection_SSC");
+            string connectionStringTenantA = _configuration.GetConnectionString("DefaultConnection_TENANT_A");
+            string connectionStringTenantB = _configuration.GetConnectionString("DefaultConnection_TENANT_B");
 
             // Normalizza codice fiscale e partita IVA
             codiceFiscale = codiceFiscale?.Trim().ToUpper();
@@ -24,22 +24,22 @@ namespace AppFileTextProcessor.Services
 
             // La query per cercare la denominazione usando codice fiscale o partita iva
             string query = @"
-                SELECT DISTINCT PBACFI, PBAPIV, PBADEN 
-                FROM pbardgf0 
-                WHERE PBAANP BETWEEN 2014 AND 2024
-                    AND (@CodiceFiscale IS NULL OR PBACFI = @CodiceFiscale)
-                    AND (@PartitaIva IS NULL OR PBAPIV = @PartitaIva)";
+                SELECT DISTINCT CodiceFiscale, PartitaIva, Denominazione 
+                FROM Pratiche 
+                WHERE AnnoProtocollo BETWEEN 2014 AND 2024
+                    AND (@CodiceFiscale IS NULL OR CodiceFiscale = @CodiceFiscale)
+                    AND (@PartitaIva IS NULL OR PartitaIva = @PartitaIva)";
 
-            // Primo tentativo con il database EBI
-            string denominazione = await TrovaDenominazioneNelDatabaseAsync(connectionStringEbi, query, codiceFiscale, partitaIva);
+            // Primo tentativo con il database TENANT_A
+            string denominazione = await TrovaDenominazioneNelDatabaseAsync(connectionStringTenantA, query, codiceFiscale, partitaIva);
 
             if (!string.IsNullOrEmpty(denominazione))
             {
                 return denominazione;
             }
 
-            // Se non è stato trovato nel database EBI, prova con il database SSC
-            return await TrovaDenominazioneNelDatabaseAsync(connectionStringSsc, query, codiceFiscale, partitaIva);
+            // Se non è stato trovato nel database TENANT_A, prova con il database TENANT_B
+            return await TrovaDenominazioneNelDatabaseAsync(connectionStringTenantB, query, codiceFiscale, partitaIva);
         }
 
         private async Task<string> TrovaDenominazioneNelDatabaseAsync(string connectionString, string query, string codiceFiscale, string partitaIva)
@@ -57,7 +57,7 @@ namespace AppFileTextProcessor.Services
                         if (await reader.ReadAsync())
                         {
                             // Restituisci la denominazione eliminando eventuali spazi aggiuntivi
-                            return reader["PBADEN"].ToString().Trim().ToUpper();
+                            return reader["Denominazione"].ToString().Trim().ToUpper();
                         }
                     }
                 }
@@ -66,3 +66,4 @@ namespace AppFileTextProcessor.Services
         }
     }
 }
+

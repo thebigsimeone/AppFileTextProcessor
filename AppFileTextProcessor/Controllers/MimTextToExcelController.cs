@@ -1,4 +1,4 @@
-﻿using AppFileTextProcessor.Interface;
+using AppFileTextProcessor.Interface;
 using Microsoft.AspNetCore.Mvc;
 using System.Text;
 using Swashbuckle.AspNetCore.Annotations;
@@ -10,7 +10,8 @@ namespace TextFileProcessor.Controllers
     [Route("api/[controller]")]
     public class MimTextToExcelController : ControllerBase
     {
-        private const string BaseDirectory = @"C:\Users\Flavio.Simeone\Desktop\MIM\";
+        private static string BaseDirectory => Environment.GetEnvironmentVariable("FILE_PROCESSOR_DIRECTORY")
+            ?? Path.Combine(AppContext.BaseDirectory, "data");
         private const string DefaultInputFileName = "MIM_INIZIALE.txt";
         private const string DefaultOutputFileName = "MIM_FINALE.xlsx";
         private readonly ITextProcessingService _textProcessingService;
@@ -64,3 +65,4 @@ namespace TextFileProcessor.Controllers
         }
     }
 }
+

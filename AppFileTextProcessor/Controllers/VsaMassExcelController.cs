@@ -1,4 +1,4 @@
-﻿using AppFileTextProcessor.Interface;
+using AppFileTextProcessor.Interface;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using Serilog;
@@ -9,7 +9,8 @@ namespace TextFileProcessor.Controllers
     [Route("api/[controller]")]
     public class VsaMassExcelController : ControllerBase
     {
-        private const string BaseDirectory = @"C:\Users\Flavio.Simeone\Desktop\VSA\";
+        private static string BaseDirectory => Environment.GetEnvironmentVariable("FILE_PROCESSOR_DIRECTORY")
+            ?? Path.Combine(AppContext.BaseDirectory, "data");
         private const string DefaultInputFileName = "VSA_MASS.xlsx";
         private const string DefaultOutputFileName = "VSA_MASS_FINALE.xlsx";
 
@@ -55,3 +56,4 @@ namespace TextFileProcessor.Controllers
         }
     }
 }
+
