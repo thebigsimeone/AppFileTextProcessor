@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using OfficeOpenXml;
 using Swashbuckle.AspNetCore.Annotations;
 using Serilog;
@@ -9,7 +9,8 @@ namespace AppFileTextProcessor.Controllers
     [Route("api/[controller]")]
     public class PhoneNumberProcessorController : ControllerBase
     {
-        private const string BaseDirectory = @"C:\Users\Flavio.Simeone\Desktop\MA7_EUROSTA\";
+        private static string BaseDirectory => Environment.GetEnvironmentVariable("FILE_PROCESSOR_DIRECTORY")
+            ?? Path.Combine(AppContext.BaseDirectory, "data");
 
         /// <summary>
         /// Elabora un file Excel e suddivide i numeri di telefono in colonne specifiche.
@@ -139,3 +140,4 @@ namespace AppFileTextProcessor.Controllers
         }
     }
 }
+

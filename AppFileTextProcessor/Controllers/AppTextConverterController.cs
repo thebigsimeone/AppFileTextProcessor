@@ -1,4 +1,4 @@
-﻿using AppFileTextProcessor.Interface;
+using AppFileTextProcessor.Interface;
 using Microsoft.AspNetCore.Mvc;
 using System.Text;
 using Swashbuckle.AspNetCore.Annotations;
@@ -20,12 +20,13 @@ namespace TextFileProcessor.Controllers
 
             // Carica i comuni dai file JSON all'avvio del controller
             _comuniService.LoadComuniFromJson(
-                @"C:\Users\Flavio.Simeone\Desktop\PublishedApp\AppFileTextProcessor\json\comuni.json",
-                @"C:\Users\Flavio.Simeone\Desktop\PublishedApp\AppFileTextProcessor\json\Elenco-comuni-italiani.json"
+                Path.Combine(AppContext.BaseDirectory, "json", "comuni.json"),
+                Path.Combine(AppContext.BaseDirectory, "json", "Elenco-comuni-italiani.json")
             );
         }
 
-        private const string BaseDirectory = @"C:\Users\Flavio.Simeone\Desktop\APPALTO\";
+        private static string BaseDirectory => Environment.GetEnvironmentVariable("FILE_PROCESSOR_DIRECTORY")
+            ?? Path.Combine(AppContext.BaseDirectory, "data");
         private const string DefaultInputFileName = "APP_INIZIALE.txt";
 
         /// <summary>
@@ -77,3 +78,4 @@ namespace TextFileProcessor.Controllers
         }
     }
 }
+

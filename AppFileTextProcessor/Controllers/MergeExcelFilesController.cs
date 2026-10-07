@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using OfficeOpenXml;
 using OfficeOpenXml.Style;
 using Swashbuckle.AspNetCore.Annotations;
@@ -14,17 +14,17 @@ namespace AppFileTextProcessor.Controllers
         /// <summary>
         /// Unisce due file Excel e genera un nuovo file con i dati combinati.
         /// </summary>
-        /// <param name="fileSSC">Primo file Excel</param>
-        /// <param name="fileEBI">Secondo file Excel</param>
+        /// <param name="fileTENANT_B">Primo file Excel</param>
+        /// <param name="fileTENANT_A">Secondo file Excel</param>
         /// <returns>File Excel unito</returns>
         [HttpPost("merge")]
         [SwaggerOperation(Summary = "Unisce due file Excel", Description = "Combina due file Excel mantenendo l'intestazione e unendo i dati.")]
         [SwaggerResponse(200, "File elaborato e restituito con successo.")]
         [SwaggerResponse(400, "Entrambi i file sono richiesti.")]
         [SwaggerResponse(500, "Errore interno del server.")]
-        public async Task<IActionResult> MergeExcelFiles(IFormFile fileSSC, IFormFile fileEBI)
+        public async Task<IActionResult> MergeExcelFiles(IFormFile fileTENANT_B, IFormFile fileTENANT_A)
         {
-            if (fileSSC == null || fileEBI == null)
+            if (fileTENANT_B == null || fileTENANT_A == null)
             {
                 Log.Warning("Uno o entrambi i file non sono stati forniti.");
                 return BadRequest("Entrambi i file sono richiesti.");
@@ -34,21 +34,21 @@ namespace AppFileTextProcessor.Controllers
             {
                 ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
-                using (var packageSSC = new ExcelPackage(fileSSC.OpenReadStream()))
-                using (var packageEBI = new ExcelPackage(fileEBI.OpenReadStream()))
+                using (var packageTENANT_B = new ExcelPackage(fileTENANT_B.OpenReadStream()))
+                using (var packageTENANT_A = new ExcelPackage(fileTENANT_A.OpenReadStream()))
                 using (var outputPackage = new ExcelPackage())
                 {
-                    var sheetSSC = packageSSC.Workbook.Worksheets[0];
-                    var sheetEBI = packageEBI.Workbook.Worksheets[0];
+                    var sheetTENANT_B = packageTENANT_B.Workbook.Worksheets[0];
+                    var sheetTENANT_A = packageTENANT_A.Workbook.Worksheets[0];
                     var outputSheet = outputPackage.Workbook.Worksheets.Add("MergedSheet");
 
-                    int totalColumns = sheetSSC.Dimension.Columns;
-                    Log.Information("Fusione di due file Excel: {File1} ({Rows1} righe), {File2} ({Rows2} righe)", fileSSC.FileName, sheetSSC.Dimension.Rows, fileEBI.FileName, sheetEBI.Dimension.Rows);
+                    int totalColumns = sheetTENANT_B.Dimension.Columns;
+                    Log.Information("Fusione di due file Excel: {File1} ({Rows1} righe), {File2} ({Rows2} righe)", fileTENANT_B.FileName, sheetTENANT_B.Dimension.Rows, fileTENANT_A.FileName, sheetTENANT_A.Dimension.Rows);
 
-                    CopyHeader(sheetSSC, outputSheet, totalColumns);
+                    CopyHeader(sheetTENANT_B, outputSheet, totalColumns);
 
-                    int currentRow = CopyRows(sheetSSC, outputSheet, 2, totalColumns);
-                    currentRow = CopyRows(sheetEBI, outputSheet, currentRow, totalColumns);
+                    int currentRow = CopyRows(sheetTENANT_B, outputSheet, 2, totalColumns);
+                    currentRow = CopyRows(sheetTENANT_A, outputSheet, currentRow, totalColumns);
 
                     int totalRows = currentRow - 2;
                     Log.Information("Unione completata: {TotalRows} righe unite.", totalRows);
@@ -56,7 +56,7 @@ namespace AppFileTextProcessor.Controllers
                     // Adatta automaticamente la larghezza delle colonne
                     outputSheet.Cells[outputSheet.Dimension.Address].AutoFitColumns();
 
-                    string outputFileName = GenerateOutputFileName(fileSSC.FileName, fileEBI.FileName, totalRows);
+                    string outputFileName = GenerateOutputFileName(fileTENANT_B.FileName, fileTENANT_A.FileName, totalRows);
 
                     var stream = new MemoryStream();
                     outputPackage.SaveAs(stream);
@@ -104,10 +104,11 @@ namespace AppFileTextProcessor.Controllers
             return currentRow;
         }
 
-        private string GenerateOutputFileName(string fileSSCName, string fileEBIName, int totalRows)
+        private string GenerateOutputFileName(string fileTENANT_BName, string fileTENANT_AName, int totalRows)
         {
-            string baseName = Path.GetFileNameWithoutExtension(fileSSCName);
+            string baseName = Path.GetFileNameWithoutExtension(fileTENANT_BName);
             return $"{baseName}_{totalRows}.xlsx";
         }
     }
 }
+

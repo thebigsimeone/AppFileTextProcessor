@@ -1,4 +1,4 @@
-﻿using AppFileTextProcessor.Interface;
+using AppFileTextProcessor.Interface;
 using iText.IO.Image;
 using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Canvas;
@@ -10,7 +10,12 @@ namespace AppFileTextProcessor.Services
 {
     public class PdfProcessingService : IPdfProcessingService
     {
-        private const string LogoPath = "logo/logo-eurocredit.png";
+        private readonly IConfiguration _configuration;
+
+        public PdfProcessingService(IConfiguration configuration)
+        {
+            _configuration = configuration;
+        }
 
         public byte[] ReplaceLogo(byte[] pdfData)
         {
@@ -21,7 +26,10 @@ namespace AppFileTextProcessor.Services
             using var pdfDocument = new PdfDocument(pdfReader, pdfWriter);
             var document = new Document(pdfDocument);
 
-            ImageData newLogo = ImageDataFactory.Create(LogoPath);
+            var logoPath = _configuration["Branding:LogoPath"];
+            if (string.IsNullOrWhiteSpace(logoPath) || !File.Exists(logoPath))
+                throw new InvalidOperationException("Configurare Branding:LogoPath con un file logo locale esistente.");
+            ImageData newLogo = ImageDataFactory.Create(logoPath);
             Image logoImage = new Image(newLogo);
 
             // Recupera dimensioni originali
@@ -50,3 +58,4 @@ namespace AppFileTextProcessor.Services
         }
     }
 }
+
