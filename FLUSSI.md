@@ -1,17 +1,19 @@
-# Flussi operativi — AppFileTextProcessor
+# AppFileTextProcessor — Flussi operativi
 
-[README](README.md) · [Controller](AppFileTextProcessor/Controllers) · [Servizi](AppFileTextProcessor/Services)
+[README del progetto](README.md) · [Flussi nel README](README.md#flussi-operativi)
 
-## Ambito e punti di ingresso
+I flussi descrivono il comportamento implementato, inclusi gli effetti parziali e le automazioni non attive. La ricostruzione si basa sull'analisi statica dei sorgenti dell'8 ottobre 2026; le verifiche proposte non costituiscono test già eseguiti.
 
-Analisi dei sorgenti disponibili il 8 ottobre 2026, senza elaborare documenti reali. Il punto di ingresso è **Swagger alla radice dell'applicazione** oppure un client HTTP. Tutte le operazioni sotto usano POST.
+## Contesto operativo
 
-Ci sono due cicli distinti:
+Il punto di ingresso è **Swagger alla radice dell'applicazione** oppure un client HTTP. Tutte le operazioni descritte utilizzano il metodo POST.
+
+Le operazioni prevedono due modalità di ingresso:
 
 - **File locali sul server:** l'utente prepara l'input nella directory `FILE_PROCESSOR_DIRECTORY` (fallback: `data` sotto `AppContext.BaseDirectory`). La risposta HTTP è un messaggio; l'output resta su disco sul server.
 - **Upload:** l'utente sceglie i file in Swagger oppure invia multipart/form-data. La risposta contiene il documento scaricabile, elaborato in memoria.
 
-Non c'è una coda di job: i controller completano l'elaborazione prima di restituire la risposta. Un metodo `async` non implica che il lavoro prosegua dopo la risposta.
+Non è presente una coda di job: i controller completano l'elaborazione prima di restituire la risposta. Un metodo `async` non implica che il lavoro prosegua dopo la risposta.
 
 ## Conversioni di file locali
 
@@ -48,9 +50,9 @@ L'utente apre l'endpoint, seleziona gli allegati richiesti e invia la richiesta.
 
 Il nome della route `MergerExcelFiles` deriva dalla classe, anche se il sorgente si chiama [MergeExcelFilesController.cs](AppFileTextProcessor/Controllers/MergeExcelFilesController.cs).
 
-Nel confronto, CF ripetuti in B conservano l'ultima coppia stato/email; righe non corrispondenti di A restano invariate. Le lettere delle colonne nei commenti del codice non corrispondono agli indici: il flusso sopra usa gli indici realmente eseguiti.
+Nel confronto, CF ripetuti in B conservano l'ultima coppia stato/email; righe non corrispondenti di A restano invariate. Le lettere delle colonne nei commenti del codice non corrispondono agli indici: la documentazione usa gli indici realmente eseguiti.
 
-Nel calcolo CF, una data non leggibile come `dd/MM/yyyy` produce un messaggio nella cella e la lavorazione continua sulle altre righe; un luogo non trovato produce “Comune non trovato”. La risposta può quindi essere 200 con errori per riga. Il parametro provincia viene letto, ma la ricerca catastale implementata usa il nome del luogo. Non c'è una verifica presso un servizio anagrafico esterno.
+Nel calcolo CF, una data non leggibile come `dd/MM/yyyy` produce un messaggio nella cella e la lavorazione continua sulle altre righe; un luogo non trovato produce “Comune non trovato”. La risposta può quindi essere 200 con errori per riga. Il parametro provincia viene letto, ma la ricerca catastale implementata usa il nome del luogo. Non è presente una verifica presso un servizio anagrafico esterno.
 
 Riferimenti: [unione mescolata](AppFileTextProcessor/Controllers/ExcelMergerController.cs), [unione tenant](AppFileTextProcessor/Controllers/MergeExcelFilesController.cs), [confronto](AppFileTextProcessor/Controllers/ConfrontaFileController.cs), [CF](AppFileTextProcessor/Controllers/CodiceFiscaleController.cs).
 
@@ -64,7 +66,7 @@ Riferimenti: [unione mescolata](AppFileTextProcessor/Controllers/ExcelMergerCont
 6. Chiude il documento e restituisce i byte; il controller risponde con `modified.pdf`.
 7. L'utente scarica e verifica tutte le pagine.
 
-**Comportamento reale:** il logo è sovrapposto; il contenuto originale sottostante non viene rimosso. Logo mancante, PDF non leggibile o errore di elaborazione producono 500. Riferimenti: [controller PDF](AppFileTextProcessor/Controllers/PdfprocessingController.cs), [servizio PDF](AppFileTextProcessor/Services/PdfProcessingService.cs).
+**Comportamento implementato:** il logo è sovrapposto; il contenuto originale sottostante non viene rimosso. Logo mancante, PDF non leggibile o errore di elaborazione producono 500. Riferimenti: [controller PDF](AppFileTextProcessor/Controllers/PdfprocessingController.cs), [servizio PDF](AppFileTextProcessor/Services/PdfProcessingService.cs).
 
 ## Diagramma dei due cicli
 
@@ -94,17 +96,17 @@ flowchart TD
 | Nomi query richiesti assenti | 400 |
 | Allegati assenti | 400; i controlli su file vuoti variano tra controller |
 | Foglio, tracciato, JSON, logo o connessione SQL non utilizzabile | Eccezione; in genere 500 dal controller. Errori durante la costruzione delle dipendenze possono avvenire prima del suo try/catch |
-| Operazione completata | 200 con messaggio o file, secondo la tabella |
+| Operazione completata | 200 con messaggio o file, secondo l'operazione richiesta |
 | Ripetizione | Ricalcola il risultato; nei file locali può sovrascrivere l'output, nell'unione mescolata può cambiare l'ordine |
 
-Non è previsto un tentativo automatico applicativo dopo un errore. Un 200 conferma il completamento del codice, non la correttezza semantica del tracciato.
+Non è previsto un tentativo automatico applicativo dopo un errore. Una risposta HTTP 200 indica il completamento dell'elaborazione. La conformità del contenuto al tracciato richiede un controllo del risultato.
 
 ## Automazioni e attività dopo la risposta
 
-Le trasformazioni, le ricerche SQL, la scelta dei dizionari, il calcolo e la generazione file sono automatici **dentro la richiesta**. Logging Serilog registra l'attività. `AtecoService` è presente e registrato, ma non risulta un endpoint dedicato né una chiamata ai suoi metodi nelle elaborazioni esaminate: non va presentato come flusso utente attivo.
+Le trasformazioni, le ricerche SQL, la scelta dei dizionari, il calcolo e la generazione file sono automatici **dentro la richiesta**. Logging Serilog registra l'attività. `AtecoService` è presente e registrato, ma non risulta un endpoint dedicato né una chiamata ai suoi metodi nelle elaborazioni esaminate: non costituisce quindi un flusso utente attivo.
 
 Non risultano scheduler, watcher, notifiche email, code persistenti, trasferimenti automatici o workflow GitHub Actions. Dopo la risposta non resta un job di elaborazione attivo.
 
-## Verifica manuale suggerita
+## Verifica dei flussi
 
 Per ciascun endpoint provare un input conforme, un input assente e un tracciato non conforme. Per i locali controllare il file sul server; per gli upload aprire il download. Verificare in particolare anno dei protocolli MIM/VSA, colonne AX/AY del confronto, errori per riga del CF, sovrapposizione PDF e ripetizione su un output locale esistente.
