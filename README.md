@@ -106,3 +106,7 @@ Le query anagrafiche richiedono tabelle o viste coerenti con il servizio, fra cu
 I dizionari JSON sono nella cartella [json](AppFileTextProcessor/json) e vengono copiati negli output di compilazione/pubblicazione. Le regole di colonne e formati sono nei [controller](AppFileTextProcessor/Controllers) e nei [servizi](AppFileTextProcessor/Services).
 
 Gli endpoint elaborano e possono sovrascrivere file locali. Usare copie dei documenti originali e una cartella di lavoro dedicata. Per la configurazione esterna e i dati esclusi dal repository vedere [PUBLICATION.md](PUBLICATION.md).
+
+## Flussi operativi e automazioni
+
+Vedere [FLUSSI.md](FLUSSI.md) per i percorsi dall'azione iniziale al risultato, le operazioni interne, gli errori, gli effetti parziali e le automazioni attive o disattivate.
